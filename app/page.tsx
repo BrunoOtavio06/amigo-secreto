@@ -1,65 +1,301 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { generateSlug, generateSecretSanta } from "@/lib/drawing";
+import { saveSecretSantaData, getSecretSantaData, type Participant } from "@/lib/storage";
+import { generateWhatsAppLink, generateWhatsAppMessage } from "@/lib/whatsapp";
+import { Share2, Plus, Trash2, Gift } from "lucide-react";
 
 export default function Home() {
+  // Initialize all state with default values to ensure consistent SSR
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [currentName, setCurrentName] = useState("");
+  const [currentPhone, setCurrentPhone] = useState("");
+  const [results, setResults] = useState<Record<string, string> | null>(null);
+  const [drawDate, setDrawDate] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  // Load data from localStorage after hydration to avoid hydration mismatch
+  useEffect(() => {
+    const saved = getSecretSantaData();
+    if (saved) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setParticipants(saved.participants ?? []);
+      setResults(saved.results ?? null);
+      setDrawDate(saved.drawDate ?? null);
+    }
+    setIsLoading(false);
+    setMounted(true);
+  }, []);
+
+  const addParticipant = () => {
+    if (currentName.trim() && currentPhone.trim()) {
+      const newParticipant: Participant = {
+        name: currentName.trim(),
+        phone: currentPhone.trim(),
+        slug: generateSlug(currentName.trim()),
+      };
+      setParticipants([...participants, newParticipant]);
+      setCurrentName("");
+      setCurrentPhone("");
+    }
+  };
+
+  const removeParticipant = (index: number) => {
+    setParticipants(participants.filter((_, i) => i !== index));
+    // Limpar resultados se houver
+    if (results) {
+      setResults(null);
+      setDrawDate(null);
+    }
+  };
+
+  const performDraw = () => {
+    if (participants.length < 2) {
+      alert("É necessário pelo menos 2 participantes para realizar o sorteio!");
+      return;
+    }
+
+    try {
+      const drawResults = generateSecretSanta(participants);
+      const now = Date.now();
+      
+      setResults(drawResults);
+      setDrawDate(now);
+
+      // Salvar no localStorage
+      saveSecretSantaData({
+        participants,
+        results: drawResults,
+        drawDate: now,
+      });
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Erro ao realizar sorteio");
+    }
+  };
+
+  const getParticipantLink = (slug: string) => {
+    // Only use full URL after component has mounted to ensure consistent hydration
+    if (mounted && typeof window !== "undefined" && window.location) {
+      return `${window.location.origin}/${slug}`;
+    }
+    // Return relative path during SSR and initial render for consistent hydration
+    return `/${slug}`;
+  };
+
+  const shareViaWhatsApp = (participant: Participant, secretSantaName: string) => {
+    const link = getParticipantLink(participant.slug);
+    const message = generateWhatsAppMessage(participant.name, secretSantaName, link);
+    const whatsappUrl = generateWhatsAppLink(participant.phone, message);
+    window.open(whatsappUrl, "_blank");
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      addParticipant();
+    }
+  };
+
+  // Show loading state during initial hydration to prevent mismatch
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-red-50 to-blue-50 p-3 sm:p-6 md:p-8">
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-6 sm:mb-8 text-center">
+            <h1 className="mb-2 text-3xl font-bold text-red-600 sm:text-4xl md:text-5xl">
+              🎁 Amigo Secreto
+            </h1>
+            <p className="text-base sm:text-lg text-muted-foreground">
+              Organize seu sorteio de forma fácil e divertida
+            </p>
+          </div>
+          <Card className="mb-4 sm:mb-6 border-red-200 bg-white/80 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-xl sm:text-2xl text-red-600">Carregando...</CardTitle>
+            </CardHeader>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-red-50 to-blue-50 p-3 sm:p-6 md:p-8">
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-6 sm:mb-8 text-center">
+          <h1 className="mb-2 text-3xl font-bold text-red-600 sm:text-4xl md:text-5xl">
+            🎁 Amigo Secreto
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-base sm:text-lg text-muted-foreground">
+            Organize seu sorteio de forma fácil e divertida
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+
+        {!results ? (
+          <Card className="mb-4 sm:mb-6 border-red-200 bg-white/80 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-xl sm:text-2xl text-red-600">Adicionar Participantes</CardTitle>
+              <CardDescription>
+                Adicione o nome e telefone de cada participante
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-red-700">
+                    Nome
+                  </Label>
+                  <Input
+                    id="name"
+                    placeholder="Ex: Bruno Otávio"
+                    value={currentName}
+                    onChange={(e) => setCurrentName(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className="border-red-200 focus:border-red-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-red-700">
+                    Telefone
+                  </Label>
+                  <Input
+                    id="phone"
+                    placeholder="Ex: 5511999999999"
+                    value={currentPhone}
+                    onChange={(e) => setCurrentPhone(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className="border-red-200 focus:border-red-500"
+                  />
+                </div>
+              </div>
+              <Button
+                onClick={addParticipant}
+                className="w-full bg-red-600 hover:bg-red-700 sm:w-auto"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Adicionar Participante
+              </Button>
+
+              {participants.length > 0 && (
+                <div className="mt-6 space-y-2">
+                  <h3 className="font-semibold text-red-600">
+                    Participantes ({participants.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {participants.map((participant, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between rounded-lg border border-red-200 bg-amber-50 p-3"
+                      >
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {participant.name}
+                          </p>
+                          <p className="text-sm text-gray-600">{participant.phone}</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeParticipant(index)}
+                          className="text-red-600 hover:bg-red-100"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {participants.length >= 2 && (
+                <Button
+                  onClick={performDraw}
+                  className="mt-6 w-full bg-blue-600 hover:bg-blue-700 sm:w-full"
+                  size="lg"
+                >
+                  <Gift className="mr-2 h-5 w-5" />
+                  Realizar Sorteio
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4 sm:space-y-6">
+            <Card className="border-blue-200 bg-white/80 shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-xl sm:text-2xl text-blue-600">
+                  🎉 Sorteio Realizado!
+                </CardTitle>
+                <CardDescription>
+                  {drawDate && !isLoading &&
+                    `Realizado em ${new Date(drawDate).toLocaleString("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}`}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {participants.map((participant) => {
+                    const secretSanta = results[participant.slug];
+                    const link = getParticipantLink(participant.slug);
+                    return (
+                      <div
+                        key={participant.slug}
+                        className="rounded-lg border border-blue-200 bg-amber-50 p-4"
+                      >
+                        <div className="mb-3">
+                          <p className="font-semibold text-gray-900">
+                            {participant.name}
+                          </p>
+                          <p className="text-xs sm:text-sm text-gray-600 break-words">
+                            Link:{" "}
+                            <a
+                              href={link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline break-all"
+                            >
+                              {link}
+                            </a>
+                          </p>
+                        </div>
+                        <Button
+                          onClick={() => shareViaWhatsApp(participant, secretSanta)}
+                          className="w-full bg-green-600 hover:bg-green-700 sm:w-auto"
+                          size="sm"
+                        >
+                          <Share2 className="mr-2 h-4 w-4" />
+                          Enviar via WhatsApp
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+                <Button
+                  onClick={() => {
+                    setResults(null);
+                    setDrawDate(null);
+                    setParticipants([]);
+                  }}
+                  variant="outline"
+                  className="mt-6 w-full border-red-300 text-red-600 hover:bg-red-50"
+                >
+                  Novo Sorteio
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
