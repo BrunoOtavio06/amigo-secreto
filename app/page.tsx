@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { generateSlug, generateSecretSanta } from "@/lib/drawing";
-import { saveSecretSantaData, getSecretSantaData, type Participant } from "@/lib/storage";
+import { saveSecretSantaData, getSecretSantaData, clearSecretSantaData, type Participant } from "@/lib/storage";
 import { generateWhatsAppLink, generateWhatsAppMessage } from "@/lib/whatsapp";
 import { Share2, Plus, Trash2, Gift } from "lucide-react";
 
@@ -18,19 +18,28 @@ export default function Home() {
   const [results, setResults] = useState<Record<string, string> | null>(null);
   const [drawDate, setDrawDate] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Load data from localStorage after hydration to avoid hydration mismatch
+  // Load data from server after hydration to avoid hydration mismatch
   useEffect(() => {
-    const saved = getSecretSantaData();
-    if (saved) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setParticipants(saved.participants ?? []);
-      setResults(saved.results ?? null);
-      setDrawDate(saved.drawDate ?? null);
-    }
-    setIsLoading(false);
-    setMounted(true);
+    const loadData = async () => {
+      try {
+        const saved = await getSecretSantaData();
+        if (saved) {
+          setParticipants(saved.participants ?? []);
+          setResults(saved.results ?? null);
+          setDrawDate(saved.drawDate ?? null);
+        }
+      } catch (error) {
+        console.error("Error loading data:", error);
+      } finally {
+        setIsLoading(false);
+        setMounted(true);
+      }
+    };
+
+    loadData();
   }, []);
 
   const addParticipant = () => {
@@ -55,12 +64,13 @@ export default function Home() {
     }
   };
 
-  const performDraw = () => {
+  const performDraw = async () => {
     if (participants.length < 2) {
       alert("É necessário pelo menos 2 participantes para realizar o sorteio!");
       return;
     }
 
+    setIsSaving(true);
     try {
       const drawResults = generateSecretSanta(participants);
       const now = Date.now();
@@ -68,14 +78,19 @@ export default function Home() {
       setResults(drawResults);
       setDrawDate(now);
 
-      // Salvar no localStorage
-      saveSecretSantaData({
+      // Salvar no servidor
+      await saveSecretSantaData({
         participants,
         results: drawResults,
         drawDate: now,
       });
     } catch (error) {
       alert(error instanceof Error ? error.message : "Erro ao realizar sorteio");
+      // Revert state on error
+      setResults(null);
+      setDrawDate(null);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -215,11 +230,12 @@ export default function Home() {
               {participants.length >= 2 && (
                 <Button
                   onClick={performDraw}
+                  disabled={isSaving}
                   className="mt-6 w-full bg-blue-600 hover:bg-blue-700 sm:w-full"
                   size="lg"
                 >
                   <Gift className="mr-2 h-5 w-5" />
-                  Realizar Sorteio
+                  {isSaving ? "Salvando..." : "Realizar Sorteio"}
                 </Button>
               )}
             </CardContent>
@@ -285,6 +301,7 @@ export default function Home() {
                     setResults(null);
                     setDrawDate(null);
                     setParticipants([]);
+                    clearSecretSantaData();
                   }}
                   variant="outline"
                   className="mt-6 w-full border-red-300 text-red-600 hover:bg-red-50"

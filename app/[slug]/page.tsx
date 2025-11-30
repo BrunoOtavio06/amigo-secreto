@@ -16,15 +16,23 @@ export default function SecretSantaResult() {
   const [notFound, setNotFound] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load data from localStorage after hydration to avoid hydration mismatch
+  // Load data from server after hydration to avoid hydration mismatch
   useEffect(() => {
-    if (slug) {
-      const result = getResultBySlug(slug);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSecretSantaName(result);
-      setNotFound(!result);
-    }
-    setIsLoading(false);
+    const loadResult = async () => {
+      if (slug) {
+        try {
+          const result = await getResultBySlug(slug);
+          setSecretSantaName(result);
+          setNotFound(!result);
+        } catch (error) {
+          console.error("Error loading result:", error);
+          setNotFound(true);
+        }
+      }
+      setIsLoading(false);
+    };
+
+    loadResult();
   }, [slug]);
 
   const handleReveal = () => {
