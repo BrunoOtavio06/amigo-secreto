@@ -1,0 +1,25 @@
+# Um nome por linha. O link de cada pessoa sai do nome:
+# "Catarina" -> /catarina   ·   "João Pedro" -> /joao-pedro
+Andreia
+Sandro
+Ana
+Bruno
+Catarina
+Charles
+Claudete
+Cleuza
+Dayana
+Dete
+Emily
+Felipe
+Flávia
+Giovane
+Jennifer
+Larissa
+Lucas
+Maria
+Mateus
+Osvaldo
+Ricardo
+Samuel
+Theo
