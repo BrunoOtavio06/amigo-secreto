@@ -140,6 +140,7 @@ const css = /* css */ `
     background: repeating-linear-gradient(45deg, var(--red) 0 11px, #fff 11px 22px);
     box-shadow: 0 18px 30px -16px rgba(80, 30, 10, .55), 0 0 0 1px rgba(0, 0, 0, .06);
   }
+  .retrato .quadro { position: relative; }
   .retrato .foto {
     position: relative;
     aspect-ratio: 1;
@@ -256,9 +257,9 @@ const azevinhoSvg = /* html */ `
   <circle cx="31" cy="28" r="1.8" fill="#fff" opacity=".7"/>
 </svg>`;
 
-// Posição padrão do gorro: encaixado no canto de cima da moldura.
-// Valores em % da largura da moldura (x/y = canto superior esquerdo do gorro).
-export const GORRO_PADRAO = { x: -16, y: -26, largura: 62, giro: -20 };
+// Posição padrão do gorro: encaixado no canto de cima da foto.
+// Valores em % do lado da foto (x/y = canto superior esquerdo do gorro).
+export const GORRO_PADRAO = { x: -26, y: -38, largura: 72, giro: -20 };
 
 const head = (titulo, descricao) => /* html */ `<!doctype html>
 <html lang="pt-BR">
@@ -301,8 +302,10 @@ export function paginaPessoa(nome, amigo, foto = {}) {
     <p class="label">${esc(pn)}, você tirou</p>
     <p class="name" id="nome"></p>
     <figure class="retrato">
-      <div class="moldura"><div class="foto" id="foto"></div></div>
-      ${foto.gorro === false ? "" : `<div class="gorro" style="${estiloGorro}">${gorroSvg}</div>`}
+      <div class="moldura"><div class="quadro">
+        <div class="foto" id="foto"></div>
+        ${foto.gorro === false ? "" : `<div class="gorro" style="${estiloGorro}">${gorroSvg}</div>`}
+      </div></div>
       <div class="azevinho">${azevinhoSvg}</div>
     </figure>
     <p class="hint">Guarde segredo! 🤫<br>Você pode abrir este link de novo quando quiser.</p>

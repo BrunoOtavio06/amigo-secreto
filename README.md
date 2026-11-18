@@ -55,7 +55,7 @@ gorro na cabeça da pessoa em vez do canto da moldura, crie `fotos/ajustes.json`
 
 - `foco`: ponto da foto original que fica no centro, em % (horizontal, vertical).
 - `zoom`: acima de 1 aproxima (bom para fotos em grupo).
-- `gorro`: posição em % da largura da moldura (`x`, `y` = canto de cima à
+- `gorro`: posição em % do lado da foto (`x`, `y` = canto de cima à
   esquerda do gorro), `largura` em % e `giro` em graus. `false` tira o gorro.
 
 ## Publicar
