@@ -14,6 +14,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { paginaPessoa, paginaInicial, pagina404 } from "./templates.mjs";
+import { carregarFoto, slug } from "./comum.mjs";
 
 const raiz = dirname(fileURLToPath(import.meta.url));
 const arquivoNomes = join(raiz, "nomes.txt");
@@ -23,15 +24,6 @@ const refazer = process.argv.includes("--refazer");
 function falhar(msg) {
   console.error(`\n✖ ${msg}\n`);
   process.exit(1);
-}
-
-export function slug(nome) {
-  return nome
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }
 
 // --- 1. Ler os nomes -------------------------------------------------------
@@ -91,7 +83,7 @@ mkdirSync(saida, { recursive: true });
 for (const nome of nomes) {
   const pasta = join(saida, slug(nome));
   mkdirSync(pasta, { recursive: true });
-  writeFileSync(join(pasta, "index.html"), paginaPessoa(nome, tirou.get(nome)));
+  writeFileSync(join(pasta, "index.html"), paginaPessoa(nome, tirou.get(nome), carregarFoto(slug(tirou.get(nome)))));
 }
 writeFileSync(join(saida, "index.html"), paginaInicial());
 writeFileSync(join(saida, "404.html"), pagina404(nomes.map(slug)));
