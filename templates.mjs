@@ -122,8 +122,64 @@ const css = /* css */ `
   .btn.ghost:active { transform: none; }
 
   .result { display: none; animation: rise .6s cubic-bezier(.2, .9, .3, 1.2) both; }
-  .opened .result { display: block; }
+  .revealed .result { display: block; }
+  .revealed .gift { display: none; }
   .opened .before { display: none; }
+
+  /* Retrato do amigo secreto: moldura quadrada de bengala doce + gorro */
+  .retrato {
+    position: relative;
+    width: min(220px, 64vw);
+    margin: 58px auto 22px;
+    transform: rotate(-2.5deg);
+    animation: pop .75s cubic-bezier(.2, .9, .3, 1.35) both;
+  }
+  .retrato .moldura {
+    padding: 11px;
+    border-radius: 8px;
+    background: repeating-linear-gradient(45deg, var(--red) 0 11px, #fff 11px 22px);
+    box-shadow: 0 18px 30px -16px rgba(80, 30, 10, .55), 0 0 0 1px rgba(0, 0, 0, .06);
+  }
+  .retrato .foto {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border: 4px solid var(--gold);
+    border-radius: 3px;
+    background: var(--green);
+  }
+  .retrato img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .retrato .inicial {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    font-family: ui-serif, "Iowan Old Style", Georgia, "Times New Roman", serif;
+    font-size: 96px;
+    font-weight: 700;
+    color: #fff;
+    background: radial-gradient(circle at 50% 40%, #2f7a5a 0%, var(--green) 70%);
+  }
+  .retrato .gorro {
+    position: absolute;
+    z-index: 2;
+    pointer-events: none;
+    filter: drop-shadow(0 4px 4px rgba(60, 20, 10, .3));
+  }
+  .retrato .azevinho {
+    position: absolute;
+    right: -16px;
+    bottom: -14px;
+    width: 64px;
+    z-index: 2;
+    pointer-events: none;
+    filter: drop-shadow(0 3px 3px rgba(40, 20, 10, .25));
+  }
+  @keyframes pop {
+    from { opacity: 0; transform: translateY(40px) scale(.6) rotate(8deg); }
+    to { opacity: 1; transform: rotate(-2.5deg); }
+  }
   .result .label { margin: 0; color: var(--muted); font-size: 16px; }
   .result .name {
     margin: 6px 0 4px;
@@ -151,7 +207,7 @@ const css = /* css */ `
   }
   @media (prefers-reduced-motion: reduce) {
     .gift .wobble, .confetti { animation: none !important; display: none; }
-    .gift .lid, .result { transition: none; animation: none; }
+    .gift .lid, .result, .retrato { transition: none; animation: none; }
   }
   footer { margin-top: 22px; font-size: 13px; color: var(--muted); }
 `;
@@ -175,6 +231,35 @@ const giftSvg = /* html */ `
   </g>
 </svg>`;
 
+// Gorro de Papai Noel (a ponta cai para a direita, com o pompom).
+const gorroSvg = /* html */ `
+<svg viewBox="0 0 120 104" aria-hidden="true">
+  <path d="M14 80 C 18 44, 40 12, 76 10 C 98 9, 112 22, 108 50 C 100 40, 90 36, 82 40 C 92 52, 100 66, 106 80 Z" fill="#c8323a"/>
+  <path d="M82 40 C 90 36, 100 40, 108 50 C 110 36, 104 22, 92 16 C 98 26, 94 34, 82 40 Z" fill="#8c1c22" opacity=".45"/>
+  <path d="M14 80 C 18 50, 34 24, 58 15 C 40 30, 32 54, 34 80 Z" fill="#8c1c22" opacity=".25"/>
+  <rect x="4" y="70" width="112" height="26" rx="13" fill="#fffdf8"/>
+  <path d="M10 88 C 30 94, 90 94, 110 88" stroke="#e4dacb" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <circle cx="108" cy="54" r="13" fill="#fffdf8"/>
+  <circle cx="104" cy="58" r="6" fill="#e4dacb" opacity=".7"/>
+</svg>`;
+
+const azevinhoSvg = /* html */ `
+<svg viewBox="0 0 64 56" aria-hidden="true">
+  <path d="M30 34 C 22 20, 8 18, 2 24 C 8 26, 8 32, 4 36 C 10 36, 12 42, 10 46 C 18 42, 26 42, 30 34 Z" fill="#1f5c43"/>
+  <path d="M34 34 C 40 18, 54 14, 62 18 C 56 22, 58 28, 62 32 C 56 34, 56 40, 58 44 C 50 42, 40 44, 34 34 Z" fill="#2f7a5a"/>
+  <path d="M30 34 C 22 28, 14 26, 6 26 M34 34 C 42 28, 50 24, 58 22" stroke="#0f3a28" stroke-width="1.4" fill="none" opacity=".5"/>
+  <circle cx="28" cy="38" r="6" fill="#b3262d"/>
+  <circle cx="38" cy="39" r="6" fill="#c8323a"/>
+  <circle cx="33" cy="30" r="6" fill="#b3262d"/>
+  <circle cx="26" cy="36" r="1.8" fill="#fff" opacity=".7"/>
+  <circle cx="36" cy="37" r="1.8" fill="#fff" opacity=".7"/>
+  <circle cx="31" cy="28" r="1.8" fill="#fff" opacity=".7"/>
+</svg>`;
+
+// Posição padrão do gorro: encaixado no canto de cima da moldura.
+// Valores em % da largura da moldura (x/y = canto superior esquerdo do gorro).
+export const GORRO_PADRAO = { x: -16, y: -26, largura: 62, giro: -20 };
+
 const head = (titulo, descricao) => /* html */ `<!doctype html>
 <html lang="pt-BR">
 <head>
@@ -189,8 +274,11 @@ const head = (titulo, descricao) => /* html */ `<!doctype html>
 <style>${css}</style>
 </head>`;
 
-export function paginaPessoa(nome, amigo) {
+// foto: { src: "data:image/jpeg;base64,..." | null, gorro: {x, y, largura, giro} | null }
+export function paginaPessoa(nome, amigo, foto = {}) {
   const pn = primeiroNome(nome);
+  const g = { ...GORRO_PADRAO, ...(foto.gorro || {}) };
+  const estiloGorro = `left:${g.x}%;top:${g.y}%;width:${g.largura}%;transform:rotate(${g.giro}deg)`;
   // O nome sorteado fica codificado só para não aparecer de cara em pré-visualizações.
   const codificado = Buffer.from(amigo, "utf8").toString("base64");
   return `${head("Amigo Secreto · Família Carvalho", `${pn}, toque para descobrir quem você tirou 🎁`)}
@@ -212,6 +300,11 @@ export function paginaPessoa(nome, amigo) {
   <section class="result" aria-live="polite">
     <p class="label">${esc(pn)}, você tirou</p>
     <p class="name" id="nome"></p>
+    <figure class="retrato">
+      <div class="moldura"><div class="foto" id="foto"></div></div>
+      ${foto.gorro === false ? "" : `<div class="gorro" style="${estiloGorro}">${gorroSvg}</div>`}
+      <div class="azevinho">${azevinhoSvg}</div>
+    </figure>
     <p class="hint">Guarde segredo! 🤫<br>Você pode abrir este link de novo quando quiser.</p>
     <button class="btn ghost" id="esconder" type="button">Esconder</button>
   </section>
@@ -221,6 +314,8 @@ export function paginaPessoa(nome, amigo) {
   var app = document.getElementById("app");
   var alvo = document.getElementById("nome");
   var dado = ${JSON.stringify(codificado)};
+  var fotoSrc = ${JSON.stringify(foto.src || "")};
+  var caixaFoto = document.getElementById("foto");
   function decodificar(b64) {
     var bin = atob(b64), bytes = new Uint8Array(bin.length);
     for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
@@ -245,16 +340,39 @@ export function paginaPessoa(nome, amigo) {
     document.body.appendChild(box);
     setTimeout(function () { box.remove(); }, 4800);
   }
+  var timer;
+  function mostrarFoto(nome) {
+    caixaFoto.textContent = "";
+    if (fotoSrc) {
+      var img = new Image();
+      img.alt = "Foto de " + nome;
+      img.src = fotoSrc;
+      caixaFoto.appendChild(img);
+    } else {
+      var ini = document.createElement("span");
+      ini.className = "inicial";
+      ini.textContent = nome.charAt(0).toUpperCase();
+      caixaFoto.appendChild(ini);
+    }
+  }
   function revelar() {
     if (app.classList.contains("opened")) return;
-    alvo.textContent = decodificar(dado);
+    var nome = decodificar(dado);
+    alvo.textContent = nome;
+    mostrarFoto(nome);
     app.classList.add("opened");
     if (navigator.vibrate) navigator.vibrate([30, 40, 60]);
-    setTimeout(confete, 250);
+    var espera = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 550;
+    timer = setTimeout(function () {
+      app.classList.add("revealed");
+      confete();
+    }, espera);
   }
   function esconder() {
-    app.classList.remove("opened");
+    clearTimeout(timer);
+    app.classList.remove("opened", "revealed");
     alvo.textContent = "";
+    caixaFoto.textContent = "";
   }
   document.getElementById("gift").addEventListener("click", revelar);
   document.getElementById("revelar").addEventListener("click", revelar);
