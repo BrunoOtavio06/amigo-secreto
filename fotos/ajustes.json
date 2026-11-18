@@ -57,18 +57,18 @@
   },
   "duda": {
     "gorro": {
-      "x": 15.2,
-      "y": 0.8,
-      "largura": 38.8,
-      "giro": -10
+      "x": 22,
+      "y": -6,
+      "largura": 56.1,
+      "giro": -6
     }
   },
   "emily": {
     "gorro": {
-      "x": 40.2,
-      "y": -4.7,
-      "largura": 33.6,
-      "giro": -10
+      "x": 24,
+      "y": -3,
+      "largura": 40,
+      "giro": -16
     }
   },
   "felipe": {
